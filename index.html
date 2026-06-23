@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spectre AI - ShoreKeeper Mode</title>
+    <title>Spectre AI - ShoreKeeper</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #0f172a; color: #e2e8f0; }
-        #chat-box { height: 400px; overflow-y: scroll; border: 1px solid #334155; padding: 15px; margin-bottom: 15px; border-radius: 8px; background: #1e293b; }
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #0f172a; color: #e2e8f0; margin: 0; }
+        #chat-box { height: 400px; overflow-y: auto; border: 1px solid #334155; padding: 15px; margin-bottom: 15px; border-radius: 8px; background: #1e293b; }
         .input-group { display: flex; gap: 10px; }
         input { flex: 1; padding: 12px; border-radius: 5px; border: 1px solid #475569; background: #0f172a; color: white; }
         button { padding: 10px 20px; border-radius: 5px; border: none; background: #38bdf8; color: #0f172a; font-weight: bold; cursor: pointer; }
@@ -23,18 +23,17 @@
     </div>
 
     <script>
-        // Fungsi ShoreKeeper Voice Configuration
+        // Fungsi Suara ShoreKeeper
         function speakResponse(text) {
-            window.speechSynthesis.cancel(); // Reset suara yang sedang berjalan
+            window.speechSynthesis.cancel();
             const speech = new SpeechSynthesisUtterance(text);
             
-            // Konfigurasi ShoreKeeper: Tenang, Dewasa, Elegan
             speech.lang = 'id-ID';
-            speech.rate = 0.85;  // Sedikit lambat (tenang)
-            speech.pitch = 1.05; // Sedikit di atas normal (lembut)
+            speech.rate = 0.85;  // Kecepatan tenang
+            speech.pitch = 1.05; // Sedikit lembut
             speech.volume = 1;
 
-            // Mencoba mencari suara Google Bahasa Indonesia untuk kualitas terbaik
+            // Mencoba menggunakan suara Google jika tersedia
             const voices = window.speechSynthesis.getVoices();
             const googleVoice = voices.find(v => v.name.includes("Google Bahasa Indonesia"));
             if (googleVoice) {
@@ -44,7 +43,7 @@
             window.speechSynthesis.speak(speech);
         }
 
-        // Fungsi kirim pesan ke API Groq kamu
+        // Fungsi Kirim Pesan
         async function sendMessage() {
             const input = document.getElementById('userInput');
             const chatBox = document.getElementById('chat-box');
@@ -56,30 +55,36 @@
             input.value = '';
 
             try {
+                // Mengirim prompt sesuai dengan struktur ask.js kamu
                 const response = await fetch('/api/ask', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ body: userText }) 
+                    body: JSON.stringify({ prompt: userText }) 
                 });
                 
                 const data = await response.json();
-                const aiResponse = data.response;
+                
+                if (data.error) {
+                    chatBox.innerHTML += `<p style="color: #ef4444;"><b>Error:</b> ${data.error}</p>`;
+                    return;
+                }
 
+                const aiResponse = data.response;
                 chatBox.innerHTML += `<p style="color: #38bdf8;"><b>ShoreKeeper:</b> ${aiResponse}</p>`;
                 
-                // Panggil suara
+                // Menjalankan fitur suara
                 speakResponse(aiResponse);
                 
                 chatBox.scrollTop = chatBox.scrollHeight;
             } catch (err) {
-                chatBox.innerHTML += `<p style="color: #ef4444;">Error: Tidak dapat menghubungi server.</p>`;
                 console.error("Error:", err);
+                chatBox.innerHTML += `<p style="color: #ef4444;">Koneksi ke server gagal.</p>`;
             }
         }
 
-        // Memastikan suara termuat saat halaman terbuka
+        // Load voices saat aplikasi dibuka
         window.speechSynthesis.onvoiceschanged = () => {
-            console.log("Suara siap.");
+            window.speechSynthesis.getVoices();
         };
     </script>
 </body>
