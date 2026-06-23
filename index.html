@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spectre AI</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+        textarea { width: 100%; height: 120px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; }
+        button { width: 100%; padding: 12px; background: #000; color: white; border: none; border-radius: 8px; margin-top: 10px; cursor: pointer; }
+        #response { margin-top: 20px; padding: 15px; background: #f4f4f4; border-radius: 8px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>Spectre AI</h1>
+    <textarea id="prompt" placeholder="Tanyakan sesuatu ke Spectre AI..."></textarea>
+    <button onclick="tanyaAI()">Kirim Pertanyaan</button>
+    <div id="response">Jawaban akan muncul di sini...</div>
+
+    <script>
+        async function tanyaAI() {
+            const prompt = document.getElementById('prompt').value;
+            const resDiv = document.getElementById('response');
+            if(!prompt) return alert("Isi dulu pertanyaannya!");
+            
+            resDiv.innerText = "Spectre sedang berpikir...";
+
+            try {
+                const response = await fetch('/api/ask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt })
+                });
+                const data = await response.json();
+                resDiv.innerText = data.response || "Error: " + data.error;
+            } catch (e) {
+                resDiv.innerText = "Gagal menghubungi server.";
+            }
+        }
+    </script>
+</body>
+</html>
