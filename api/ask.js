@@ -1,12 +1,11 @@
-require("dotenv").config();
-const express = require("express");
 const Groq = require("groq-sdk");
-const app = express();
-app.use(express.json());
-
 const groq = new Groq({ apiKey: process.env.API_KEY });
 
-app.post("/ask", async (req, res) => {
+module.exports = async (req, res) => {
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: "Method not allowed" });
+    }
+
     try {
         const chat = await groq.chat.completions.create({
             messages: [{ role: "user", content: req.body.prompt }],
@@ -16,6 +15,4 @@ app.post("/ask", async (req, res) => {
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
-});
-
-app.listen(3000, "0.0.0.0", () => console.log("Spectre Ai aktif di port 3000"));
+};
