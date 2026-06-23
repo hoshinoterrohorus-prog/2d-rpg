@@ -1,91 +1,414 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spectre AI - ShoreKeeper</title>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #0f172a; color: #e2e8f0; margin: 0; }
-        #chat-box { height: 400px; overflow-y: auto; border: 1px solid #334155; padding: 15px; margin-bottom: 15px; border-radius: 8px; background: #1e293b; }
-        .input-group { display: flex; gap: 10px; }
-        input { flex: 1; padding: 12px; border-radius: 5px; border: 1px solid #475569; background: #0f172a; color: white; }
-        button { padding: 10px 20px; border-radius: 5px; border: none; background: #38bdf8; color: #0f172a; font-weight: bold; cursor: pointer; }
-        button:hover { background: #7dd3fc; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Spectre AI – ShoreKeeper</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #1a1b1e;
+      --surface:   #25262b;
+      --surface2:  #2c2d32;
+      --border:    #373a40;
+      --accent:    #38bdf8;
+      --accent-dim:#0ea5e9;
+      --text:      #e2e8f0;
+      --muted:     #94a3b8;
+      --user-bg:   #2d3a4a;
+      --ai-bg:     #25262b;
+      --radius:    12px;
+    }
+
+    html, body { height: 100%; }
+
+    body {
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── HEADER ── */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .logo-ring {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #6366f1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    header h1 {
+      font-size: 15px; font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    header span {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--muted);
+      background: var(--surface2);
+      padding: 3px 9px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+
+    /* ── CHAT AREA ── */
+    #chat-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 0;
+      scroll-behavior: smooth;
+    }
+
+    #chat-scroll::-webkit-scrollbar { width: 6px; }
+    #chat-scroll::-webkit-scrollbar-track { background: transparent; }
+    #chat-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .message-row {
+      display: flex;
+      gap: 12px;
+      padding: 6px 20px;
+      max-width: 800px;
+      margin: 0 auto;
+      width: 100%;
+      animation: fadeSlideIn 0.22s ease;
+    }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      margin-top: 2px;
+    }
+    .avatar.user {
+      background: #334155;
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .avatar.ai {
+      background: linear-gradient(135deg, var(--accent), #6366f1);
+    }
+
+    .bubble-wrap { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+
+    .sender-name {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+    .sender-name.ai-name { color: var(--accent); }
+
+    .bubble {
+      padding: 12px 15px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      line-height: 1.65;
+      max-width: 100%;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+    .bubble.user { background: var(--user-bg); color: var(--text); }
+    .bubble.ai   { background: var(--ai-bg); color: var(--text); border: 1px solid var(--border); }
+    .bubble.error { background: #3b1a1a; border: 1px solid #7f1d1d; color: #fca5a5; }
+
+    /* typing indicator */
+    .typing-dot {
+      display: inline-block;
+      width: 7px; height: 7px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: blink 1.2s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink {
+      0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+      40%            { opacity: 1;   transform: scale(1); }
+    }
+    .typing-dots { display: flex; gap: 4px; align-items: center; padding: 14px 15px; }
+
+    /* ── EMPTY STATE ── */
+    #empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 10px;
+      color: var(--muted);
+      text-align: center;
+      padding: 20px;
+    }
+    #empty-state .big-icon { font-size: 42px; margin-bottom: 4px; }
+    #empty-state h2 { font-size: 18px; font-weight: 600; color: var(--text); }
+    #empty-state p  { font-size: 13px; max-width: 320px; }
+
+    /* ── SUGGESTION CHIPS ── */
+    .chips {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 12px;
+    }
+    .chip {
+      padding: 7px 14px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      background: var(--surface2);
+      color: var(--muted);
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .chip:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── INPUT BAR ── */
+    #input-bar {
+      flex-shrink: 0;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      padding: 14px 20px;
+    }
+    .input-wrap {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      transition: border-color 0.2s;
+    }
+    .input-wrap:focus-within { border-color: var(--accent); }
+
+    #userInput {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      resize: none;
+      line-height: 1.5;
+      max-height: 140px;
+      overflow-y: auto;
+    }
+    #userInput::placeholder { color: var(--muted); }
+
+    #sendBtn {
+      width: 34px; height: 34px;
+      border-radius: 8px;
+      border: none;
+      background: var(--accent);
+      color: #0f172a;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    #sendBtn:hover  { background: #7dd3fc; }
+    #sendBtn:disabled { opacity: 0.35; cursor: not-allowed; }
+    #sendBtn svg { width: 16px; height: 16px; }
+
+    .input-footer {
+      max-width: 800px;
+      margin: 6px auto 0;
+      font-size: 11px;
+      color: #475569;
+      text-align: center;
+    }
+
+    @media (max-width: 600px) {
+      .message-row { padding: 5px 12px; }
+      #input-bar   { padding: 10px 12px; }
+    }
+  </style>
 </head>
 <body>
 
-    <h2>Spectre AI</h2>
-    <div id="chat-box"></div>
-    <div class="input-group">
-        <input type="text" id="userInput" placeholder="Tanyakan sesuatu pada ShoreKeeper...">
-        <button onclick="sendMessage()">Kirim</button>
+  <header>
+    <div class="logo-ring">🌊</div>
+    <h1>ShoreKeeper</h1>
+    <span>Spectre AI</span>
+  </header>
+
+  <div id="chat-scroll">
+    <div id="empty-state">
+      <div class="big-icon">🌊</div>
+      <h2>ShoreKeeper siap membantumu</h2>
+      <p>Tanyakan apa saja — tentang dunia Wuthering Waves, lore, strategi, atau apapun.</p>
+      <div class="chips">
+        <div class="chip" onclick="suggest('Ceritakan tentang Kuro Games')">Tentang Kuro Games</div>
+        <div class="chip" onclick="suggest('Siapa ShoreKeeper?')">Siapa ShoreKeeper?</div>
+        <div class="chip" onclick="suggest('Tips farming di Wuthering Waves')">Tips farming</div>
+      </div>
     </div>
+  </div>
 
-    <script>
-        // Fungsi Suara ShoreKeeper
-        function speakResponse(text) {
-            window.speechSynthesis.cancel();
-            const speech = new SpeechSynthesisUtterance(text);
-            
-            speech.lang = 'id-ID';
-            speech.rate = 0.85;  // Kecepatan tenang
-            speech.pitch = 1.05; // Sedikit lembut
-            speech.volume = 1;
+  <div id="input-bar">
+    <div class="input-wrap">
+      <textarea id="userInput" rows="1" placeholder="Pesan ke ShoreKeeper..."></textarea>
+      <button id="sendBtn" onclick="sendMessage()" title="Kirim">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+    <div class="input-footer">ShoreKeeper bisa membuat kesalahan. Verifikasi info penting.</div>
+  </div>
 
-            // Mencoba menggunakan suara Google jika tersedia
-            const voices = window.speechSynthesis.getVoices();
-            const googleVoice = voices.find(v => v.name.includes("Google Bahasa Indonesia"));
-            if (googleVoice) {
-                speech.voice = googleVoice;
-            }
+  <script>
+    const chatScroll = document.getElementById('chat-scroll');
+    const userInput  = document.getElementById('userInput');
+    const sendBtn    = document.getElementById('sendBtn');
 
-            window.speechSynthesis.speak(speech);
+    userInput.addEventListener('input', () => {
+      userInput.style.height = 'auto';
+      userInput.style.height = Math.min(userInput.scrollHeight, 140) + 'px';
+    });
+
+    userInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    function suggest(text) {
+      userInput.value = text;
+      sendMessage();
+    }
+
+    function clearEmpty() {
+      const empty = document.getElementById('empty-state');
+      if (empty) empty.remove();
+    }
+
+    function appendRow(role, content, isTyping = false) {
+      clearEmpty();
+      const isAI = role === 'ai';
+      const row = document.createElement('div');
+      row.className = 'message-row';
+
+      const avatar = document.createElement('div');
+      avatar.className = `avatar ${isAI ? 'ai' : 'user'}`;
+      avatar.textContent = isAI ? '🌊' : 'K';
+
+      const wrap = document.createElement('div');
+      wrap.className = 'bubble-wrap';
+
+      const name = document.createElement('div');
+      name.className = `sender-name ${isAI ? 'ai-name' : ''}`;
+      name.textContent = isAI ? 'ShoreKeeper' : 'Kamu';
+
+      const bubble = document.createElement('div');
+      bubble.className = `bubble ${isAI ? 'ai' : 'user'}`;
+
+      if (isTyping) {
+        bubble.innerHTML = `<div class="typing-dots">
+          <span class="typing-dot"></span>
+          <span class="typing-dot"></span>
+          <span class="typing-dot"></span>
+        </div>`;
+      } else {
+        bubble.textContent = content;
+      }
+
+      wrap.appendChild(name);
+      wrap.appendChild(bubble);
+      row.appendChild(avatar);
+      row.appendChild(wrap);
+      chatScroll.appendChild(row);
+      chatScroll.scrollTop = chatScroll.scrollHeight;
+      return bubble;
+    }
+
+    function appendError(msg) {
+      clearEmpty();
+      const row = document.createElement('div');
+      row.className = 'message-row';
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar ai';
+      avatar.textContent = '🌊';
+      const wrap = document.createElement('div');
+      wrap.className = 'bubble-wrap';
+      const name = document.createElement('div');
+      name.className = 'sender-name ai-name';
+      name.textContent = 'ShoreKeeper';
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble error';
+      bubble.textContent = msg;
+      wrap.appendChild(name);
+      wrap.appendChild(bubble);
+      row.appendChild(avatar);
+      row.appendChild(wrap);
+      chatScroll.appendChild(row);
+      chatScroll.scrollTop = chatScroll.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const text = userInput.value.trim();
+      if (!text) return;
+
+      sendBtn.disabled = true;
+      userInput.value = '';
+      userInput.style.height = 'auto';
+
+      appendRow('user', text);
+      const typingBubble = appendRow('ai', '', true);
+
+      try {
+        const res = await fetch('/api/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: text })
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          typingBubble.parentElement.parentElement.remove();
+          appendError('Error: ' + data.error);
+        } else {
+          typingBubble.className = 'bubble ai';
+          typingBubble.textContent = data.response;
+          chatScroll.scrollTop = chatScroll.scrollHeight;
         }
+      } catch (err) {
+        typingBubble.parentElement.parentElement.remove();
+        appendError('Koneksi ke server gagal. Pastikan server berjalan.');
+      }
 
-        // Fungsi Kirim Pesan
-        async function sendMessage() {
-            const input = document.getElementById('userInput');
-            const chatBox = document.getElementById('chat-box');
-            const userText = input.value;
-            
-            if (!userText) return;
-
-            chatBox.innerHTML += `<p style="color: #94a3b8;"><b>Kamu:</b> ${userText}</p>`;
-            input.value = '';
-
-            try {
-                // Mengirim prompt sesuai dengan struktur ask.js kamu
-                const response = await fetch('/api/ask', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: userText }) 
-                });
-                
-                const data = await response.json();
-                
-                if (data.error) {
-                    chatBox.innerHTML += `<p style="color: #ef4444;"><b>Error:</b> ${data.error}</p>`;
-                    return;
-                }
-
-                const aiResponse = data.response;
-                chatBox.innerHTML += `<p style="color: #38bdf8;"><b>ShoreKeeper:</b> ${aiResponse}</p>`;
-                
-                // Menjalankan fitur suara
-                speakResponse(aiResponse);
-                
-                chatBox.scrollTop = chatBox.scrollHeight;
-            } catch (err) {
-                console.error("Error:", err);
-                chatBox.innerHTML += `<p style="color: #ef4444;">Koneksi ke server gagal.</p>`;
-            }
-        }
-
-        // Load voices saat aplikasi dibuka
-        window.speechSynthesis.onvoiceschanged = () => {
-            window.speechSynthesis.getVoices();
-        };
-    </script>
+      sendBtn.disabled = false;
+      userInput.focus();
+    }
+  </script>
 </body>
 </html>
