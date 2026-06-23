@@ -3,40 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spectre AI</title>
+    <title>Spectre AI - ShoreKeeper Mode</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
-        textarea { width: 100%; height: 120px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; }
-        button { width: 100%; padding: 12px; background: #000; color: white; border: none; border-radius: 8px; margin-top: 10px; cursor: pointer; }
-        #response { margin-top: 20px; padding: 15px; background: #f4f4f4; border-radius: 8px; white-space: pre-wrap; }
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #0f172a; color: #e2e8f0; }
+        #chat-box { height: 400px; overflow-y: scroll; border: 1px solid #334155; padding: 15px; margin-bottom: 15px; border-radius: 8px; background: #1e293b; }
+        .input-group { display: flex; gap: 10px; }
+        input { flex: 1; padding: 12px; border-radius: 5px; border: 1px solid #475569; background: #0f172a; color: white; }
+        button { padding: 10px 20px; border-radius: 5px; border: none; background: #38bdf8; color: #0f172a; font-weight: bold; cursor: pointer; }
+        button:hover { background: #7dd3fc; }
     </style>
 </head>
 <body>
-    <h1>Spectre AI</h1>
-    <textarea id="prompt" placeholder="Tanyakan sesuatu ke Spectre AI..."></textarea>
-    <button onclick="tanyaAI()">Kirim Pertanyaan</button>
-    <div id="response">Jawaban akan muncul di sini...</div>
+
+    <h2>Spectre AI</h2>
+    <div id="chat-box"></div>
+    <div class="input-group">
+        <input type="text" id="userInput" placeholder="Tanyakan sesuatu pada ShoreKeeper...">
+        <button onclick="sendMessage()">Kirim</button>
+    </div>
 
     <script>
-        async function tanyaAI() {
-            const prompt = document.getElementById('prompt').value;
-            const resDiv = document.getElementById('response');
-            if(!prompt) return alert("Isi dulu pertanyaannya!");
+        // Fungsi ShoreKeeper Voice Configuration
+        function speakResponse(text) {
+            window.speechSynthesis.cancel(); // Reset suara yang sedang berjalan
+            const speech = new SpeechSynthesisUtterance(text);
             
-            resDiv.innerText = "Spectre sedang berpikir...";
+            // Konfigurasi ShoreKeeper: Tenang, Dewasa, Elegan
+            speech.lang = 'id-ID';
+            speech.rate = 0.85;  // Sedikit lambat (tenang)
+            speech.pitch = 1.05; // Sedikit di atas normal (lembut)
+            speech.volume = 1;
+
+            // Mencoba mencari suara Google Bahasa Indonesia untuk kualitas terbaik
+            const voices = window.speechSynthesis.getVoices();
+            const googleVoice = voices.find(v => v.name.includes("Google Bahasa Indonesia"));
+            if (googleVoice) {
+                speech.voice = googleVoice;
+            }
+
+            window.speechSynthesis.speak(speech);
+        }
+
+        // Fungsi kirim pesan ke API Groq kamu
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const chatBox = document.getElementById('chat-box');
+            const userText = input.value;
+            
+            if (!userText) return;
+
+            chatBox.innerHTML += `<p style="color: #94a3b8;"><b>Kamu:</b> ${userText}</p>`;
+            input.value = '';
 
             try {
                 const response = await fetch('/api/ask', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt })
+                    body: JSON.stringify({ body: userText }) 
                 });
+                
                 const data = await response.json();
-                resDiv.innerText = data.response || "Error: " + data.error;
-            } catch (e) {
-                resDiv.innerText = "Gagal menghubungi server.";
+                const aiResponse = data.response;
+
+                chatBox.innerHTML += `<p style="color: #38bdf8;"><b>ShoreKeeper:</b> ${aiResponse}</p>`;
+                
+                // Panggil suara
+                speakResponse(aiResponse);
+                
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } catch (err) {
+                chatBox.innerHTML += `<p style="color: #ef4444;">Error: Tidak dapat menghubungi server.</p>`;
+                console.error("Error:", err);
             }
         }
+
+        // Memastikan suara termuat saat halaman terbuka
+        window.speechSynthesis.onvoiceschanged = () => {
+            console.log("Suara siap.");
+        };
     </script>
 </body>
 </html>
