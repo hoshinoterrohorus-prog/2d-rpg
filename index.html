@@ -2,43 +2,39 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Spectre AI</title>
+    <title>Shorekeeper AI</title>
     <style>
-        body { background: #0f172a; color: white; font-family: sans-serif; padding: 20px; }
-        #chat-box { height: 400px; overflow-y: auto; border: 1px solid #334155; padding: 15px; border-radius: 8px; background: #1e293b; margin-bottom: 10px; }
-        input { width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: none; }
-        button { width: 100%; padding: 10px; background: #38bdf8; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .img-result { max-width: 200px; display: block; margin-top: 10px; border-radius: 8px; cursor: zoom-in; }
+        body { background: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        #chat-box { width: 100%; max-width: 600px; height: 500px; overflow-y: auto; border: 1px solid #334155; padding: 20px; border-radius: 12px; background: #1e293b; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .input-group { width: 100%; max-width: 600px; margin-top: 15px; display: flex; gap: 10px; }
+        input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; }
+        button { padding: 10px 20px; border-radius: 8px; border: none; background: #38bdf8; color: #0f172a; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
-    <h2>Spectre AI</h2>
     <div id="chat-box"></div>
-    <input type="text" id="imgLink" placeholder="Link gambar untuk dianalisis (opsional)...">
-    <input type="text" id="userInput" placeholder="Tanya sesuatu atau 'Cari gambar kucing'...">
-    <button onclick="sendMessage()">Kirim</button>
+    <div class="input-group">
+        <input type="text" id="userInput" placeholder="Tanya tentang Wuthering Waves...">
+        <button onclick="sendMessage()">Kirim</button>
+    </div>
 
     <script>
         async function sendMessage() {
-            const userInput = document.getElementById('userInput').value;
-            const imgLink = document.getElementById('imgLink').value;
+            const input = document.getElementById('userInput');
             const chatBox = document.getElementById('chat-box');
-            
-            chatBox.innerHTML += `<p><b>Kamu:</b> ${userInput}</p>`;
-            
+            if (!input.value) return;
+
+            chatBox.innerHTML += `<p><b>Rover:</b> ${input.value}</p>`;
+            const text = input.value;
+            input.value = '';
+
             const res = await fetch('/api/ask', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ prompt: userInput, imageUrl: imgLink })
+                body: JSON.stringify({ prompt: text })
             });
-            
             const data = await res.json();
-            let html = `<p><b>ShoreKeeper:</b> ${data.response}</p>`;
-            if (data.imageUrl) {
-                html += `<a href="${data.imageUrl}" target="_blank"><img src="${data.imageUrl}" class="img-result"></a>`;
-            }
-            
-            chatBox.innerHTML += html;
+            chatBox.innerHTML += `<p><b>Shorekeeper:</b> ${data.response}</p>`;
             chatBox.scrollTop = chatBox.scrollHeight;
         }
     </script>
