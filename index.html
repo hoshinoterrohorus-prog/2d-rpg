@@ -2,39 +2,45 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Shorekeeper AI</title>
+    <title>Spectre AI</title>
     <style>
-        body { background: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        #chat-box { width: 100%; max-width: 600px; height: 500px; overflow-y: auto; border: 1px solid #334155; padding: 20px; border-radius: 12px; background: #1e293b; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        .input-group { width: 100%; max-width: 600px; margin-top: 15px; display: flex; gap: 10px; }
-        input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; }
-        button { padding: 10px 20px; border-radius: 8px; border: none; background: #38bdf8; color: #0f172a; font-weight: bold; cursor: pointer; }
+        body { background: #0f172a; color: #e2e8f0; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        #chat-box { width: 100%; max-width: 600px; height: 500px; overflow-y: auto; border: 1px solid #334155; padding: 20px; border-radius: 12px; background: #1e293b; margin-bottom: 10px; }
+        input { width: 100%; max-width: 600px; padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; box-sizing: border-box; }
+        button { width: 100%; max-width: 600px; padding: 12px; border-radius: 8px; border: none; background: #38bdf8; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
     <div id="chat-box"></div>
-    <div class="input-group">
-        <input type="text" id="userInput" placeholder="Tanya tentang Wuthering Waves...">
-        <button onclick="sendMessage()">Kirim</button>
-    </div>
+    <input type="text" id="userInput" placeholder="Tanya tentang Wuthering Waves...">
+    <button onclick="sendMessage()" id="sendBtn">Kirim</button>
 
     <script>
         async function sendMessage() {
             const input = document.getElementById('userInput');
             const chatBox = document.getElementById('chat-box');
+            const btn = document.getElementById('sendBtn');
             if (!input.value) return;
 
             chatBox.innerHTML += `<p><b>Rover:</b> ${input.value}</p>`;
             const text = input.value;
             input.value = '';
+            btn.disabled = true;
 
-            const res = await fetch('/api/ask', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ prompt: text })
-            });
-            const data = await res.json();
-            chatBox.innerHTML += `<p><b>Shorekeeper:</b> ${data.response}</p>`;
+            try {
+                const res = await fetch('/api/ask', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ prompt: text })
+                });
+                
+                const data = await res.json();
+                chatBox.innerHTML += `<p><b>Shorekeeper:</b> ${data.response || "Error: Respon kosong"}</p>`;
+            } catch (err) {
+                chatBox.innerHTML += `<p><b>Sistem:</b> Gagal menghubungi backend.</p>`;
+            }
+            
+            btn.disabled = false;
             chatBox.scrollTop = chatBox.scrollHeight;
         }
     </script>
